@@ -7,10 +7,11 @@
 
 # Libraries
 fs             = require 'fs'
+carrier        = require 'carrier'
 { Db }         = require 'mongodb'
 { Connection } = require 'mongodb'
 { Server }     = require 'mongodb'
-carrier        = require 'carrier'
+{ spawn }      = require 'child_process'
 
 # Runtime configuration
 pipe           = process.argv[2]
@@ -35,10 +36,10 @@ fs.stat pipe, (err, stat) ->
 	db.collection 'log_stream', (err, collection) ->
 		throw err if err
 
-		fifo = fs.createReadStream pipe
+		tail = spawn 'tail', [ '-f', pipe ]
 		log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/
 
-		carrier.carry fifo, (line) ->
+		carrier.carry tail.stdout, (line) ->
 			# Listen for log input lines and process them here
 			matches = line.match log_regexp
 
@@ -49,4 +50,7 @@ fs.stat pipe, (err, stat) ->
 					match_num++
 			else
 				console.log "No Matches!"
-			
+
+		process.on 'SIGINT', ->
+			console.log 'Killing tail process and exiting' if verbose
+			tail.kill 'SIGTERM'

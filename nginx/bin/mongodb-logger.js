@@ -1,10 +1,11 @@
 (function() {
-  var Connection, Db, Server, carrier, fs, mongo_db, mongo_host, mongo_port, pipe, verbose;
+  var Connection, Db, Server, carrier, fs, mongo_db, mongo_host, mongo_port, pipe, spawn, verbose;
   fs = require('fs');
+  carrier = require('carrier');
   Db = require('mongodb').Db;
   Connection = require('mongodb').Connection;
   Server = require('mongodb').Server;
-  carrier = require('carrier');
+  spawn = require('child_process').spawn;
   pipe = process.argv[2];
   mongo_db = process.argv[3];
   mongo_host = process.argv[4] ? process.argv[4] : "127.0.0.1";
@@ -28,13 +29,13 @@
     server = new Server(mongo_host);
     db = new Db(mongo_db, server);
     return db.collection('log_stream', function(err, collection) {
-      var fifo, log_regexp;
+      var log_regexp, tail;
       if (err) {
         throw err;
       }
-      fifo = fs.createReadStream(pipe);
+      tail = spawn('tail', ['-f', pipe]);
       log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
-      return carrier.carry(fifo, function(line) {
+      carrier.carry(tail.stdout, function(line) {
         var match_num, matches;
         matches = line.match(log_regexp);
         if (matches && matches.length > 0) {
@@ -46,6 +47,12 @@
         } else {
           return console.log("No Matches!");
         }
+      });
+      return process.on('SIGINT', function() {
+        if (verbose) {
+          console.log('Killing tail process and exiting');
+        }
+        return tail.kill('SIGTERM');
       });
     });
   });
