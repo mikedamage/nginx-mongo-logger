@@ -1,0 +1,7 @@
+{exec} = require 'child_process'
+task 'build', 'Compile files from src/*.coffee to bin/*.js', ->
+	console.log 'Compiling src/*.coffee => bin/*.js'
+	exec 'coffee --output bin/ src/', (err, stdout, stderr) ->
+		throw err if err
+		console.log stdout + stderr
+		console.log 'Done!'
