@@ -73,7 +73,7 @@
           if (verbose) {
             console.log('Killing tail process and exiting');
           }
-          return tail.kill('SIGINT');
+          return tail.kill('SIGKILL');
         });
       });
     });

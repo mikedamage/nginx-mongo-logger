@@ -75,4 +75,4 @@ fs.stat pipe, (err, stat) ->
 
 			process.on 'SIGINT', ->
 				console.log 'Killing tail process and exiting' if verbose
-				tail.kill 'SIGINT'
+				tail.kill 'SIGKILL'
