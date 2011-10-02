@@ -10,7 +10,7 @@
   mongo_db = process.argv[3];
   mongo_host = process.argv[4] ? process.argv[4] : "127.0.0.1";
   mongo_port = process.argv[5] ? process.argv[5] : "27017";
-  verbose = true;
+  verbose = false;
   fs.stat(pipe, function(err, stat) {
     var db, server;
     if (verbose) {

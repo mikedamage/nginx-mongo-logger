@@ -18,7 +18,7 @@ pipe           = process.argv[2]
 mongo_db       = process.argv[3]
 mongo_host     = if process.argv[4] then process.argv[4] else "127.0.0.1"
 mongo_port     = if process.argv[5] then process.argv[5] else "27017"
-verbose        = true
+verbose        = false
 
 fs.stat pipe, (err, stat) ->
 	console.log "Opening named pipe #{pipe} for reading..." if verbose
