@@ -28,7 +28,7 @@
     }
     server = new Server(mongo_host);
     db = new Db(mongo_db, server);
-    return db.collection('log_stream', function(err, collection) {
+    return db.collection('log_stream', function(err, coll) {
       var log_regexp, tail;
       if (err) {
         throw err;
@@ -36,13 +36,31 @@
       tail = spawn('tail', ['-f', pipe]);
       log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
       carrier.carry(tail.stdout, function(line) {
-        var match_num, matches;
+        var attrs, match_num, matches;
         matches = line.match(log_regexp);
         if (matches && matches.length > 0) {
           match_num = 0;
-          return matches.forEach(function(m) {
-            console.log("" + match_num + ":\t" + m);
-            return match_num++;
+          /*
+          				if verbose
+          					matches.forEach (m) ->
+          						console.log "#{match_num}:\t#{m}"
+          						match_num++
+          				*/
+          attrs = {
+            facility: 'nginx',
+            date: new Date(),
+            remote_ip: matches[0],
+            username: matches[1],
+            method: matches[3],
+            path: matches[4],
+            http_version: matches[5],
+            status: matches[6],
+            size: matches[7],
+            parent: matches[8],
+            user_agent: matches[9]
+          };
+          return coll.insert(attrs, function(res) {
+            return console.log(res);
           });
         } else {
           return console.log("No Matches!");

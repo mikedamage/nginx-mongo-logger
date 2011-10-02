@@ -33,7 +33,7 @@ fs.stat pipe, (err, stat) ->
 	db = new Db mongo_db, server
 
 	# Open the log_stream collection for writing
-	db.collection 'log_stream', (err, collection) ->
+	db.collection 'log_stream', (err, coll) ->
 		throw err if err
 
 		tail = spawn 'tail', [ '-f', pipe ]
@@ -45,9 +45,30 @@ fs.stat pipe, (err, stat) ->
 
 			if matches and matches.length > 0
 				match_num = 0
-				matches.forEach (m) ->
-					console.log "#{match_num}:\t#{m}"
-					match_num++
+
+				###
+				if verbose
+					matches.forEach (m) ->
+						console.log "#{match_num}:\t#{m}"
+						match_num++
+				###
+
+				attrs = 
+					facility: 'nginx'
+					date: new Date()
+					remote_ip: matches[0]
+					username: matches[1]
+					method: matches[3]
+					path: matches[4]
+					http_version: matches[5]
+					status: matches[6]
+					size: matches[7]
+					parent: matches[8]
+					user_agent: matches[9]
+
+				coll.insert attrs, (res) ->
+					console.log res
+
 			else
 				console.log "No Matches!"
 
