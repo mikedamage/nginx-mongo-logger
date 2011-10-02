@@ -5,3 +5,10 @@ task 'build', 'Compile files from src/*.coffee to bin/*.js', ->
 		throw err if err
 		console.log stdout + stderr
 		console.log 'Done!'
+
+task 'upload', 'Upload logger daemon to production server', (err, stdout, stderr) ->
+	console.log 'Uploading compiled JS to production server'
+	exec 'scp -r -P 22322 bin/* gruntzilla@thealternativepress.com:bin/'
+	throw err if err
+	console.log stdout + stderr
+	console.log 'Done'
