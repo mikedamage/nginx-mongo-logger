@@ -26,51 +26,55 @@
     if (verbose) {
       console.log("Connecting to MongoDB database...");
     }
-    server = new Server(mongo_host);
+    server = new Server(mongo_host, mongo_port, {
+      auto_reconnect: true
+    }, {});
     db = new Db(mongo_db, server);
-    return db.collection('log_stream', function(err, coll) {
-      var log_regexp, tail;
-      if (err) {
-        throw err;
-      }
-      tail = spawn('tail', ['-f', pipe]);
-      log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
-      carrier.carry(tail.stdout, function(line) {
-        var attrs, match_num, matches;
-        matches = line.match(log_regexp);
-        if (matches && matches.length > 0) {
-          match_num = 0;
-          /*
-          				if verbose
-          					matches.forEach (m) ->
-          						console.log "#{match_num}:\t#{m}"
-          						match_num++
-          				*/
-          attrs = {
-            facility: 'nginx',
-            date: new Date(),
-            remote_ip: matches[0],
-            username: matches[1],
-            method: matches[3],
-            path: matches[4],
-            http_version: matches[5],
-            status: matches[6],
-            size: matches[7],
-            parent: matches[8],
-            user_agent: matches[9]
-          };
-          return coll.insert(attrs, function(res) {
-            return console.log(res);
-          });
-        } else {
-          return console.log("No Matches!");
+    return db.open(function(err, db) {
+      return db.collection('log_stream', function(err, coll) {
+        var log_regexp, tail;
+        if (err) {
+          throw err;
         }
-      });
-      return process.on('SIGINT', function() {
-        if (verbose) {
-          console.log('Killing tail process and exiting');
-        }
-        return tail.kill('SIGTERM');
+        tail = spawn('tail', ['-f', pipe]);
+        log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
+        carrier.carry(tail.stdout, function(line) {
+          var attrs, match_num, matches;
+          matches = line.match(log_regexp);
+          if (matches && matches.length > 0) {
+            match_num = 0;
+            /*
+            					if verbose
+            						matches.forEach (m) ->
+            							console.log "#{match_num}:\t#{m}"
+            							match_num++
+            					*/
+            attrs = {
+              facility: 'nginx',
+              date: new Date(),
+              remote_ip: matches[1],
+              username: matches[2],
+              method: matches[4],
+              path: matches[5],
+              http_version: matches[6],
+              status: matches[7],
+              size: matches[8],
+              parent: matches[9],
+              user_agent: matches[10]
+            };
+            return coll.insert(attrs, function(res) {
+              return console.log(res);
+            });
+          } else {
+            return console.log("No Matches!");
+          }
+        });
+        return process.on('SIGINT', function() {
+          if (verbose) {
+            console.log('Killing tail process and exiting');
+          }
+          return tail.kill('SIGINT');
+        });
       });
     });
   });

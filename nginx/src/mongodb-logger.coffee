@@ -29,49 +29,50 @@ fs.stat pipe, (err, stat) ->
 		process.exit 1
 
 	console.log "Connecting to MongoDB database..." if verbose
-	server = new Server mongo_host
+	server = new Server mongo_host, mongo_port, { auto_reconnect: true }, {}
 	db = new Db mongo_db, server
 
-	# Open the log_stream collection for writing
-	db.collection 'log_stream', (err, coll) ->
-		throw err if err
+	db.open (err, db) ->
+		# Open the log_stream collection for writing
+		db.collection 'log_stream', (err, coll) ->
+			throw err if err
 
-		tail = spawn 'tail', [ '-f', pipe ]
-		log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/
+			tail = spawn 'tail', [ '-f', pipe ]
+			log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/
 
-		carrier.carry tail.stdout, (line) ->
-			# Listen for log input lines and process them here
-			matches = line.match log_regexp
+			carrier.carry tail.stdout, (line) ->
+				# Listen for log input lines and process them here
+				matches = line.match log_regexp
 
-			if matches and matches.length > 0
-				match_num = 0
+				if matches and matches.length > 0
+					match_num = 0
 
-				###
-				if verbose
-					matches.forEach (m) ->
-						console.log "#{match_num}:\t#{m}"
-						match_num++
-				###
+					###
+					if verbose
+						matches.forEach (m) ->
+							console.log "#{match_num}:\t#{m}"
+							match_num++
+					###
 
-				attrs = 
-					facility: 'nginx'
-					date: new Date()
-					remote_ip: matches[0]
-					username: matches[1]
-					method: matches[3]
-					path: matches[4]
-					http_version: matches[5]
-					status: matches[6]
-					size: matches[7]
-					parent: matches[8]
-					user_agent: matches[9]
+					attrs = 
+						facility: 'nginx'
+						date: new Date()
+						remote_ip: matches[1]
+						username: matches[2]
+						method: matches[4]
+						path: matches[5]
+						http_version: matches[6]
+						status: matches[7]
+						size: matches[8]
+						parent: matches[9]
+						user_agent: matches[10]
 
-				coll.insert attrs, (res) ->
-					console.log res
+					coll.insert attrs, (res) ->
+						console.log res
 
-			else
-				console.log "No Matches!"
+				else
+					console.log "No Matches!"
 
-		process.on 'SIGINT', ->
-			console.log 'Killing tail process and exiting' if verbose
-			tail.kill 'SIGTERM'
+			process.on 'SIGINT', ->
+				console.log 'Killing tail process and exiting' if verbose
+				tail.kill 'SIGINT'
