@@ -38,7 +38,7 @@
         }
         tail = spawn('tail', ['-f', pipe]);
         log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
-        carrier.carry(tail.stdout, function(line) {
+        return carrier.carry(tail.stdout, function(line) {
           var attrs, match_num, matches;
           matches = line.match(log_regexp);
           if (matches && matches.length > 0) {
@@ -63,17 +63,13 @@
               user_agent: matches[10]
             };
             return coll.insert(attrs, function(res) {
-              return console.log(res);
+              if (verbose) {
+                return console.log(res);
+              }
             });
           } else {
             return console.log("No Matches!");
           }
-        });
-        return process.on('SIGINT', function() {
-          if (verbose) {
-            console.log('Killing tail process and exiting');
-          }
-          return tail.kill('SIGKILL');
         });
       });
     });

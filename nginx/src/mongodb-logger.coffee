@@ -68,11 +68,7 @@ fs.stat pipe, (err, stat) ->
 						user_agent: matches[10]
 
 					coll.insert attrs, (res) ->
-						console.log res
+						console.log res if verbose
 
 				else
 					console.log "No Matches!"
-
-			process.on 'SIGINT', ->
-				console.log 'Killing tail process and exiting' if verbose
-				tail.kill 'SIGKILL'
