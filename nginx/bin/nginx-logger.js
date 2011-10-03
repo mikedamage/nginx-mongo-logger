@@ -46,9 +46,15 @@
         tail = spawn('tail', ['-f', pipe]);
         log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
         return carrier.carry(tail.stdout, function(line) {
-          var attrs, matches;
+          var attrs, matches, size, status_code;
           matches = line.match(log_regexp);
           if (matches && matches.length > 0) {
+            if (matches[7]) {
+              status_code = parseInt(matches[7], 10);
+            }
+            if (matches[8]) {
+              size = parseInt(matches[8]);
+            }
             attrs = {
               facility: 'nginx',
               date: new Date(),
@@ -57,8 +63,8 @@
               method: matches[4],
               path: matches[5],
               http_version: matches[6],
-              status: matches[7],
-              size: matches[8],
+              status: status_code ? status_code : matches[7],
+              size: size ? size : matches[8],
               parent: matches[9],
               user_agent: matches[10]
             };

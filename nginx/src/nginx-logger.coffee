@@ -53,6 +53,8 @@ fs.stat pipe, (err, stat) ->
 				matches = line.match log_regexp
 
 				if matches and matches.length > 0
+					status_code = parseInt matches[7], 10 if matches[7]
+					size = parseInt matches[8] if matches[8]
 					attrs = 
 						facility: 'nginx'
 						date: new Date()
@@ -61,8 +63,8 @@ fs.stat pipe, (err, stat) ->
 						method: matches[4]
 						path: matches[5]
 						http_version: matches[6]
-						status: matches[7]
-						size: matches[8]
+						status: if status_code then status_code else matches[7]
+						size: if size then size else matches[8]
 						parent: matches[9]
 						user_agent: matches[10]
 
