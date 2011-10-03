@@ -54,7 +54,7 @@ fs.stat pipe, (err, stat) ->
 
 				if matches and matches.length > 0
 					status_code = parseInt matches[7], 10 if matches[7]
-					size = parseInt matches[8] if matches[8]
+					size = parseInt matches[8], 10 if matches[8]
 					attrs = 
 						facility: 'nginx'
 						date: new Date()

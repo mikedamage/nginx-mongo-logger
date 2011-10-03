@@ -53,7 +53,7 @@
               status_code = parseInt(matches[7], 10);
             }
             if (matches[8]) {
-              size = parseInt(matches[8]);
+              size = parseInt(matches[8], 10);
             }
             attrs = {
               facility: 'nginx',
