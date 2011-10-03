@@ -7,6 +7,7 @@
 
 # Libraries
 fs             = require 'fs'
+path           = require 'path'
 carrier        = require 'carrier'
 { Db }         = require 'mongodb'
 { Connection } = require 'mongodb'
@@ -14,11 +15,18 @@ carrier        = require 'carrier'
 { spawn }      = require 'child_process'
 
 # Runtime configuration
-pipe           = process.argv[2]
-mongo_db       = process.argv[3]
-mongo_host     = if process.argv[4] then process.argv[4] else "127.0.0.1"
-mongo_port     = if process.argv[5] then process.argv[5] else "27017"
-verbose        = false
+pipe             = process.argv[2]
+mongo_collection = process.argv[3]
+mongo_db         = 'nginx_logs'
+mongo_host       = if process.argv[4] then process.argv[4] else "127.0.0.1"
+mongo_port       = if process.argv[5] then process.argv[5] else "27017"
+verbose          = false
+
+if process.argv.length < 4
+	script_name = 
+	console.log "# = Nginx MongoDB Logger Daemon"
+	console.log "Usage: #{path.basename process.argv[1]} log_file collection [mongo_host] [mongo_port]"
+	process.exit()
 
 fs.stat pipe, (err, stat) ->
 	console.log "Opening named pipe #{pipe} for reading..." if verbose
@@ -34,7 +42,7 @@ fs.stat pipe, (err, stat) ->
 
 	db.open (err, db) ->
 		# Open the log_stream collection for writing
-		db.collection 'log_stream', (err, coll) ->
+		db.collection mongo_collection, (err, coll) ->
 			throw err if err
 
 			tail = spawn 'tail', [ '-f', pipe ]
@@ -45,15 +53,6 @@ fs.stat pipe, (err, stat) ->
 				matches = line.match log_regexp
 
 				if matches and matches.length > 0
-					match_num = 0
-
-					###
-					if verbose
-						matches.forEach (m) ->
-							console.log "#{match_num}:\t#{m}"
-							match_num++
-					###
-
 					attrs = 
 						facility: 'nginx'
 						date: new Date()
@@ -71,4 +70,4 @@ fs.stat pipe, (err, stat) ->
 						console.log res if verbose
 
 				else
-					console.log "No Matches!"
+					console.log "No Matches!" if verbose

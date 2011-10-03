@@ -1,16 +1,23 @@
 (function() {
-  var Connection, Db, Server, carrier, fs, mongo_db, mongo_host, mongo_port, pipe, spawn, verbose;
+  var Connection, Db, Server, carrier, fs, mongo_collection, mongo_db, mongo_host, mongo_port, path, pipe, script_name, spawn, verbose;
   fs = require('fs');
+  path = require('path');
   carrier = require('carrier');
   Db = require('mongodb').Db;
   Connection = require('mongodb').Connection;
   Server = require('mongodb').Server;
   spawn = require('child_process').spawn;
   pipe = process.argv[2];
-  mongo_db = process.argv[3];
+  mongo_collection = process.argv[3];
+  mongo_db = 'nginx_logs';
   mongo_host = process.argv[4] ? process.argv[4] : "127.0.0.1";
   mongo_port = process.argv[5] ? process.argv[5] : "27017";
   verbose = false;
+  if (process.argv.length < 4) {
+    script_name = console.log("# = Nginx MongoDB Logger Daemon");
+    console.log("Usage: " + (path.basename(process.argv[1])) + " log_file collection [mongo_host] [mongo_port]");
+    process.exit();
+  }
   fs.stat(pipe, function(err, stat) {
     var db, server;
     if (verbose) {
@@ -31,7 +38,7 @@
     }, {});
     db = new Db(mongo_db, server);
     return db.open(function(err, db) {
-      return db.collection('log_stream', function(err, coll) {
+      return db.collection(mongo_collection, function(err, coll) {
         var log_regexp, tail;
         if (err) {
           throw err;
@@ -39,16 +46,9 @@
         tail = spawn('tail', ['-f', pipe]);
         log_regexp = /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\ \-\ (.+)\ \[(.+)\]\ \"(\w+)\ (.+)\ HTTP\/(\d\.\d)\"\ (\d{3})\ (.+)\ \"(.+)\"\ \"(.+)\"$/;
         return carrier.carry(tail.stdout, function(line) {
-          var attrs, match_num, matches;
+          var attrs, matches;
           matches = line.match(log_regexp);
           if (matches && matches.length > 0) {
-            match_num = 0;
-            /*
-            					if verbose
-            						matches.forEach (m) ->
-            							console.log "#{match_num}:\t#{m}"
-            							match_num++
-            					*/
             attrs = {
               facility: 'nginx',
               date: new Date(),
@@ -68,7 +68,9 @@
               }
             });
           } else {
-            return console.log("No Matches!");
+            if (verbose) {
+              return console.log("No Matches!");
+            }
           }
         });
       });
