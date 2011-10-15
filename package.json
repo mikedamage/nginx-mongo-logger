@@ -1,7 +1,7 @@
 {
-	"name": "nginx-mongo-log-slurp",
+	"name": "nginx-mongo-logger",
 	"description": "Tails an Nginx log and inserts each line into a MongoDB collection",
-	"homepage": "http://github.com/mikedamage/nginx-mongo-log-slurp",
+	"homepage": "http://github.com/mikedamage/nginx-mongo-logger",
 	"keywords": [ "logging", "nginx", "mongodb" ],
 
 	"author": {
@@ -9,12 +9,38 @@
 		"email": "mike.is.green@gmail.com",
 		"url": "http://mikedamage.github.com/"
 	},
+	
+	"contributors": [ "James Andino" ],
 
-	"version": "0.1",
+	"version": "0.1.0",
 
 	"main": "./bin/nginx-logger.js",
 	"bin": {
 		"nginx-mongo-logger": "./bin/nginx-logger.js"
+	},
+	"man": {
+		"nginx-mongo-logger": "./man/nginx-mongo-logger.1"
+	},
+
+	"repository": {
+		"type": "git",
+		"url": "http://github.com/mikedamage/nginx-mongo-logger.git"
+	},
+
+	"dependencies": {
+		"carrier": "~0.1.3",
+		"mongodb": "~0.9.6"
+	},
+	
+	"engines": {
+		"node": ">=0.4.12"
+	},
+
+	"os": [ "linux", "darwin", "freebsd" ],
+
+	"licenses": {
+		"type": "MIT",
+		"url": "http://www.opensource.org/licenses/mit-license.php"
 	}
 
 }
