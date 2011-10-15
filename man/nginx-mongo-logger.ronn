@@ -18,15 +18,18 @@ The log format that `nginx-mongo-logger` expects is as follows:
 
 Where `TIME_STAMP` looks like: `14/Oct/2011:19:53:31 -0400`
 
-
 ## MONGODB SETUP
 
 For best results, you should setup a capped collection on your MongoDB server ahead of time. This takes
-care of automatic rotation, as old log data will be automatically replaced by new. See mongo(1)
+care of automatic rotation, as old log data will be automatically replaced by new.
 
 	$ mongo
 	> use my_database
 	> db.createCollection('nginx_logs', { capped: true, size: 32000000 })
+
+## UPSTART JOB
+
+See `examples/upstart.conf` for an example of an Upstart job using `nginx-mongo-logger`.
 
 ## ANALYZING YOUR LOGS
 

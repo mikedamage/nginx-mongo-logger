@@ -29,7 +29,7 @@ IP_ADDR \- USER [TIME_STAMP] "HTTP_METHOD REQUEST_URI HTTP/1\.1" STATUS SIZE "RE
 Where \fBTIME_STAMP\fR looks like: \fB14/Oct/2011:19:53:31 \-0400\fR
 .
 .SH "MONGODB SETUP"
-For best results, you should setup a capped collection on your MongoDB server ahead of time\. This takes care of automatic rotation, as old log data will be automatically replaced by new\. See mongo(1)
+For best results, you should setup a capped collection on your MongoDB server ahead of time\. This takes care of automatic rotation, as old log data will be automatically replaced by new\.
 .
 .IP "" 4
 .
@@ -42,6 +42,9 @@ $ mongo
 .fi
 .
 .IP "" 0
+.
+.SH "UPSTART JOB"
+See \fBexamples/upstart\.conf\fR for an example of an Upstart job using \fBnginx\-mongo\-logger\fR\.
 .
 .SH "ANALYZING YOUR LOGS"
 Analyzing your stored logs is crazy simple\. The easiest way is to write a MapReduce function and store it on the server to cut down on typing\. This example function will rank all 404 errors by frequency and store them in a collection called \fBdead_links\fR\.

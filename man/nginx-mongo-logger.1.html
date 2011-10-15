@@ -58,6 +58,7 @@
     <a href="#DESCRIPTION">DESCRIPTION</a>
     <a href="#LOG-FORMAT">LOG FORMAT</a>
     <a href="#MONGODB-SETUP">MONGODB SETUP</a>
+    <a href="#UPSTART-JOB">UPSTART JOB</a>
     <a href="#ANALYZING-YOUR-LOGS">ANALYZING YOUR LOGS</a>
   </div>
 
@@ -93,12 +94,16 @@ CLF (Common Log Format) and extracts nuggets of info, which it then inserts into
 <h2 id="MONGODB-SETUP">MONGODB SETUP</h2>
 
 <p>For best results, you should setup a capped collection on your MongoDB server ahead of time. This takes
-care of automatic rotation, as old log data will be automatically replaced by new. See <span class="man-ref">mongo<span class="s">(1)</span></span></p>
+care of automatic rotation, as old log data will be automatically replaced by new.</p>
 
 <pre><code>$ mongo
 &gt; use my_database
 &gt; db.createCollection('nginx_logs', { capped: true, size: 32000000 })
 </code></pre>
+
+<h2 id="UPSTART-JOB">UPSTART JOB</h2>
+
+<p>See <code>examples/upstart.conf</code> for an example of an Upstart job using <code>nginx-mongo-logger</code>.</p>
 
 <h2 id="ANALYZING-YOUR-LOGS">ANALYZING YOUR LOGS</h2>
 
