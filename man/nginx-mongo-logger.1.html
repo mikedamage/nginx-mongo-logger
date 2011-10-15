@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' value='text/html;charset=utf8'>
+  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <title>nginx-mongo-logger(1) - Pipe Nginx log output into a MongoDB collection</title>
+  <style type='text/css' media='all'>
+  /* style: man */
+  body#manpage {margin:0}
+  .mp {max-width:100ex;padding:0 9ex 1ex 4ex}
+  .mp p,.mp pre,.mp ul,.mp ol,.mp dl {margin:0 0 20px 0}
+  .mp h2 {margin:10px 0 0 0}
+  .mp > p,.mp > pre,.mp > ul,.mp > ol,.mp > dl {margin-left:8ex}
+  .mp h3 {margin:0 0 0 4ex}
+  .mp dt {margin:0;clear:left}
+  .mp dt.flush {float:left;width:8ex}
+  .mp dd {margin:0 0 0 9ex}
+  .mp h1,.mp h2,.mp h3,.mp h4 {clear:left}
+  .mp pre {margin-bottom:20px}
+  .mp pre+h2,.mp pre+h3 {margin-top:22px}
+  .mp h2+pre,.mp h3+pre {margin-top:5px}
+  .mp img {display:block;margin:auto}
+  .mp h1.man-title {display:none}
+  .mp,.mp code,.mp pre,.mp tt,.mp kbd,.mp samp,.mp h3,.mp h4 {font-family:monospace;font-size:14px;line-height:1.42857142857143}
+  .mp h2 {font-size:16px;line-height:1.25}
+  .mp h1 {font-size:20px;line-height:2}
+  .mp {text-align:justify;background:#fff}
+  .mp,.mp code,.mp pre,.mp pre code,.mp tt,.mp kbd,.mp samp {color:#131211}
+  .mp h1,.mp h2,.mp h3,.mp h4 {color:#030201}
+  .mp u {text-decoration:underline}
+  .mp code,.mp strong,.mp b {font-weight:bold;color:#131211}
+  .mp em,.mp var {font-style:italic;color:#232221;text-decoration:none}
+  .mp a,.mp a:link,.mp a:hover,.mp a code,.mp a pre,.mp a tt,.mp a kbd,.mp a samp {color:#0000ff}
+  .mp b.man-ref {font-weight:normal;color:#434241}
+  .mp pre {padding:0 4ex}
+  .mp pre code {font-weight:normal;color:#434241}
+  .mp h2+pre,h3+pre {padding-left:0}
+  ol.man-decor,ol.man-decor li {margin:3px 0 10px 0;padding:0;float:left;width:33%;list-style-type:none;text-transform:uppercase;color:#999;letter-spacing:1px}
+  ol.man-decor {width:100%}
+  ol.man-decor li.tl {text-align:left}
+  ol.man-decor li.tc {text-align:center;letter-spacing:4px}
+  ol.man-decor li.tr {text-align:right;float:right}
+  </style>
+</head>
+<!--
+  The following styles are deprecated and will be removed at some point:
+  div#man, div#man ol.man, div#man ol.head, div#man ol.man.
+
+  The .man-page, .man-decor, .man-head, .man-foot, .man-title, and
+  .man-navigation should be used instead.
+-->
+<body id='manpage'>
+  <div class='mp' id='man'>
+
+  <div class='man-navigation' style='display:none'>
+    <a href="#NAME">NAME</a>
+    <a href="#SYNOPSIS">SYNOPSIS</a>
+    <a href="#DESCRIPTION">DESCRIPTION</a>
+    <a href="#LOG-FORMAT">LOG FORMAT</a>
+    <a href="#MONGODB-SETUP">MONGODB SETUP</a>
+    <a href="#ANALYZING-YOUR-LOGS">ANALYZING YOUR LOGS</a>
+  </div>
+
+  <ol class='man-decor man-head man head'>
+    <li class='tl'>nginx-mongo-logger(1)</li>
+    <li class='tc'></li>
+    <li class='tr'>nginx-mongo-logger(1)</li>
+  </ol>
+
+  <h2 id="NAME">NAME</h2>
+<p class="man-name">
+  <code>nginx-mongo-logger</code> - <span class="man-whatis">Pipe Nginx log output into a MongoDB collection</span>
+</p>
+
+<h2 id="SYNOPSIS">SYNOPSIS</h2>
+
+<p><code>nginx-mongo-logger log_file mongo_collection [mongo_host] [mongo_port]</code></p>
+
+<h2 id="DESCRIPTION">DESCRIPTION</h2>
+
+<p>Spawns a tail process and listens for complete lines of input. For each line, <code>nginx-mongo-logger</code> parses
+CLF (Common Log Format) and extracts nuggets of info, which it then inserts into a MongoDB collection.</p>
+
+<h2 id="LOG-FORMAT">LOG FORMAT</h2>
+
+<p>The log format that <code>nginx-mongo-logger</code> expects is as follows:</p>
+
+<pre><code>IP_ADDR - USER [TIME_STAMP] "HTTP_METHOD REQUEST_URI HTTP/1.1" STATUS SIZE "REFERRER_URI" "USER_AGENT"
+</code></pre>
+
+<p>Where <code>TIME_STAMP</code> looks like: <code>14/Oct/2011:19:53:31 -0400</code></p>
+
+<h2 id="MONGODB-SETUP">MONGODB SETUP</h2>
+
+<p>For best results, you should setup a capped collection on your MongoDB server ahead of time. This takes
+care of automatic rotation, as old log data will be automatically replaced by new. See <span class="man-ref">mongo<span class="s">(1)</span></span></p>
+
+<pre><code>$ mongo
+&gt; use my_database
+&gt; db.createCollection('nginx_logs', { capped: true, size: 32000000 })
+</code></pre>
+
+<h2 id="ANALYZING-YOUR-LOGS">ANALYZING YOUR LOGS</h2>
+
+<p>Analyzing your stored logs is crazy simple. The easiest way is to write a MapReduce function and store it on the server to cut down on typing.
+This example function will rank all 404 errors by frequency and store them in a collection called <code>dead_links</code>.</p>
+
+<pre><code>$ mongo
+&gt; use my_database
+&gt; rank_404s = function() {
+    return db.runCommand({
+        mapReduce: 'access_logs',
+        query: { status: 404 },
+        out: 'dead_links',
+        map: function() {
+            emit(this.method + "::" + this.path, { count: 1 });
+        },
+        reduce: function(key, vals) {
+            var result = { count: 0 };
+            vals.forEach(function(val) {
+                result.count += val.count;
+            });
+            return result;
+        }
+    });
+}
+&gt; db.system.js.save({ _id: 'rank_404s', value: rank_404s })
+&gt; db.eval('rank_404s()')
+</code></pre>
+
+
+  <ol class='man-decor man-foot man foot'>
+    <li class='tl'></li>
+    <li class='tc'>October 2011</li>
+    <li class='tr'>nginx-mongo-logger(1)</li>
+  </ol>
+
+  </div>
+</body>
+</html>

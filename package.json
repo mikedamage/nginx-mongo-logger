@@ -1,0 +1,20 @@
+{
+	"name": "nginx-mongo-log-slurp",
+	"description": "Tails an Nginx log and inserts each line into a MongoDB collection",
+	"homepage": "http://github.com/mikedamage/nginx-mongo-log-slurp",
+	"keywords": [ "logging", "nginx", "mongodb" ],
+
+	"author": {
+		"name": "Mike Green",
+		"email": "mike.is.green@gmail.com",
+		"url": "http://mikedamage.github.com/"
+	},
+
+	"version": "0.1",
+
+	"main": "./bin/nginx-logger.js",
+	"bin": {
+		"nginx-mongo-logger": "./bin/nginx-logger.js"
+	}
+
+}
